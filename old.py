@@ -1,6 +1,7 @@
+# OLD VERSION FROM AN INITIAL CONCEPT THAT HAS BEEN IMPROVED UPON - OUTDATED
 import pymupdf
 
-pdf = pymupdf.open("orar_clase_11A.pdf")
+pdf = pymupdf.open("orar_clase.pdf")
 page = pdf[0]
 Coordconst = 612;
 day_boundaries = [Coordconst - 500, Coordconst - 405, Coordconst - 310, Coordconst - 220, Coordconst - 125, Coordconst - 30]
