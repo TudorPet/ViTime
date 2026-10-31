@@ -1,39 +1,28 @@
 import pymupdf
+import streamlit as st
+from collections import defaultdict
+from orar_teachers import parse_lessons, add_to_teacher_schedules, DAY_NAMES
 
-pdf = pymupdf.open("orar_clase_11A.pdf")
-page = pdf[0]
-Coordconst = 612;
-day_boundaries = [Coordconst - 500, Coordconst - 405, Coordconst - 310, Coordconst - 220, Coordconst - 125, Coordconst - 30]
-period_boundaries = [89, 142, 196, 249, 302, 335, 408, 462, 515, 568, 622, 674, 726, 780]
+st.title("Teacher schedules")
+uploaded = st.file_uploader("Upload the timetable PDF", type="pdf")
 
+if uploaded:
+    doc = pymupdf.open(stream=uploaded.read(), filetype="pdf")
+    schedules = defaultdict(list)
+    for page in doc:
+        add_to_teacher_schedules(schedules, parse_lessons(page))
 
-def find_interval(coordinate, boundaries):
-    for i in range(len(boundaries) - 1):
-        if boundaries[i] <= coordinate < boundaries[i + 1]:
-            return i + 1
-
-    return None
-
-def classify_word(word, day_boundaries, period_boundaries):
-    x0, y0, x1, y1 = word[:4]
-
-    x = (x0 + x1) / 2
-    y = (y0 + y1) / 2
-
-    day = find_interval(y, day_boundaries)
-    period = find_interval(x, period_boundaries)
-
-    return day, period
-
-words = page.get_text("words", sort=True)
-
-for word in words:
-    if len(word[4]) > 2:
-        day, period = classify_word(
-            word,
-            day_boundaries,
-            period_boundaries
-        )
-
-        print(word[4], day, period)
-
+    teacher = st.selectbox("Teacher", sorted(schedules))
+    entries = sorted(schedules[teacher], key=lambda e: (e["day"], e["period"]))
+    rows = [
+    {
+        "Day": DAY_NAMES[e["day"] - 1],
+        "Period": e["period"],
+        "Class": e["class"],
+        "Subject": e["subject"],
+        "Room": e["room"],
+        "Group": e["group"] or "",
+    }
+    for e in entries
+    ]
+    st.table(rows)
