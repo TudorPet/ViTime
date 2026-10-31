@@ -41,6 +41,7 @@ Your browser opens the app. To stop it, press `Ctrl+C` in the terminal.
 | `orar_teachers.py` | Reads lessons from a page: subject, teacher, room, group, class name. Builds the per-teacher schedules. |
 | `orar_merged_cells.py` | Finds the table grid and detects merged cells (lessons spanning several periods). |
 | `start.bat` | Launcher for Windows. |
+| `requirements.txt` | Python dependencies. |
 
 ## How it works
 
