@@ -5,7 +5,7 @@ from orar_teachers import parse_lessons, add_to_teacher_schedules, DAY_NAMES
 
 st.markdown("<h1 style='text-align: center;'>Teacher schedules</h1>", unsafe_allow_html=True) # center title
 
-left, middle, right = st.columns([1, 2, 1])
+left, middle, right = st.columns([1, 2, 1]) # center logo - modify middle column number in order to enlarge
 with middle:
     st.image("logo.png", width="stretch")
 
