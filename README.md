@@ -71,3 +71,7 @@ Your browser opens the app. To stop it, press `Ctrl+C` in the terminal.
 
 Timetables contain teachers' names and schedules. Do not commit the PDFs to a
 public repository (`*.pdf` is best kept in `.gitignore`).
+
+## Work in progress
+
+There is still some work left to do on the comments of this code, in order to make it as easy to understand as possible
