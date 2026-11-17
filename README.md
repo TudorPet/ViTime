@@ -35,6 +35,16 @@ streamlit run app.py
 
 Your browser opens the app. To stop it, press `Ctrl+C` in the terminal.
 
+## Summer and winter hours
+ 
+The app has a "Winter hours" toggle that sets the times shown for each period.
+The PDFs print the summer times; the app calculates both schedules itself.
+ 
+- Summer: first period at 07:30, 50 minute periods, 10 minute breaks.
+- Winter: first period at 07:30, 45 minute periods, 5 minute breaks, with
+  10 minute breaks after periods 3, 6 and 9 (09:55-10:05, 12:30-12:40,
+  15:05-15:15).
+  
 ## Project structure
 
 | File | Purpose |
