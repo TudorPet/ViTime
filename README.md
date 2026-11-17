@@ -11,7 +11,7 @@ Developed as part of the Engineering Club
 ## Requirements
 
 - Python 3.13
-- Packages `streamlit` and `pymupdf`
+- Packages `streamlit` and `pymupdf` (listed in `requirements.txt`)
 
 ## Installation
 
@@ -61,8 +61,9 @@ Your browser opens the app. To stop it, press `Ctrl+C` in the terminal.
 
 ## Assumptions and limitations
 
-- Every page uses the same layout as the aSc Timetables export (same grid
-  position, 5 days, 13 periods).
+- Every page is an aSc Timetables export: a table with one row per day, one
+  column per period, and the day names in a first column. The grid position and
+  page size are detected from the lines on each page, so they may change.
 - Teachers appear as the short codes printed in the timetable (for example
   `JoDo`). The PDF does not contain full names.
 - Subject text is expected to be in a font size of at least 10 pt, and
@@ -77,4 +78,6 @@ public repository (`*.pdf` is best kept in `.gitignore`).
 
 ## Work in progress
 
-There is still some work left to do on the comments of this code, in order to make it as easy to understand as possible
+Currently, I am working on merging this with another project and publishing it as a full, browser accessible app.
+There is still some work left to do on the comments of this code, in order to make it as easy to understand as possible.
+A full pdf containing explanations is in development.

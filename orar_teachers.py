@@ -4,19 +4,17 @@ from collections import defaultdict
 import pymupdf
 
 # Reuse the grid code from the previous file (like #include in C++).
-from orar_merged_cells import (DAY_BOUNDARIES, PERIOD_BOUNDARIES, TOL,
-                               get_vertical_lines, build_cells)
+from orar_merged_cells import TOL, get_vertical_lines, build_cells, detect_grid
 
 BIG_FONT = 10          # text with a font size >= this is the subject
 GROUP_PREFIX = "Group"  # label printed at the top of each group, e.g. "Group 1"
 DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri"]
-TABLE_TOP = 61.2        # y of the line that closes the table's header at the top
 TITLE_FONT = 30         # the class name ("10 A") is printed at about 33 pt
 
 
-# ---------------------------------------------------------------------------
+
 # Step 1: horizontal lines (the thin lines that split a cell between groups)
-# ---------------------------------------------------------------------------
+
 def get_horizontal_lines(page):
     """Return every horizontal line on the page as (y, x_left, x_right)."""
     lines = []
@@ -29,11 +27,10 @@ def get_horizontal_lines(page):
     return lines
 
 
-# ---------------------------------------------------------------------------
 # Step 2: text "chunks" = runs of characters that were printed one after
-# another. A room ("Sport1") and a teacher ("DanM") are separate chunks even
+# another. A room ("Sport1") and a teacher ("JoDo") are separate chunks even
 # when they touch, because the second one starts with a jump backwards.
-# ---------------------------------------------------------------------------
+
 def get_text_chunks(page):
     chunks = []
     for block in page.get_text("rawdict")["blocks"]:
@@ -58,34 +55,33 @@ def get_text_chunks(page):
     return chunks
 
 
-# ---------------------------------------------------------------------------
+
 # Step 2b: the class's default room. aSc prints it once, right-aligned above
 # the table (e.g. "Lb-s-Co"), and leaves it out of every cell that uses it.
-# ---------------------------------------------------------------------------
-def get_default_room(chunks):
-    right_edge = PERIOD_BOUNDARIES[-1]
+
+def get_default_room(chunks, table_top, right_edge):
     for c in chunks:
-        above_table = (c["y0"] + c["y1"]) / 2 < TABLE_TOP
+        above_table = (c["y0"] + c["y1"]) / 2 < table_top
         right_aligned = abs(c["x1"] - right_edge) < 3
         if above_table and right_aligned:
             return c["text"].strip()
     return None                                  # this timetable has none
 
 
-# ---------------------------------------------------------------------------
+
 # Step 2c: the class name, printed large at the top centre of every page.
-# ---------------------------------------------------------------------------
-def get_class_name(chunks):
+
+def get_class_name(chunks, table_top):
     title = [c for c in chunks
-             if c["size"] >= TITLE_FONT and (c["y0"] + c["y1"]) / 2 < TABLE_TOP]
+             if c["size"] >= TITLE_FONT and (c["y0"] + c["y1"]) / 2 < table_top]
     title.sort(key=lambda c: c["x0"])            # left to right: "10", "A"
     name = "".join("".join(c["text"].split()) for c in title)   # drop spaces
     return name or None
 
 
-# ---------------------------------------------------------------------------
+
 # Step 3: turn the chunks of ONE lesson (one group inside a cell) into a dict.
-# ---------------------------------------------------------------------------
+
 def read_lesson(chunks, left, right):
     subject_parts = []
     teacher = room = group = None
@@ -112,22 +108,26 @@ def read_lesson(chunks, left, right):
             "room": room, "group": group}
 
 
-# ---------------------------------------------------------------------------
+
 # Step 4: walk over every cell of the timetable and collect its lessons.
-# ---------------------------------------------------------------------------
+
 def parse_lessons(page):
-    cells = build_cells(get_vertical_lines(page), DAY_BOUNDARIES, PERIOD_BOUNDARIES)
+    grid = detect_grid(page)
+    if grid is None:                             # not a timetable page
+        return []
+    table_top, day_boundaries, period_boundaries = grid
+    cells = build_cells(get_vertical_lines(page), day_boundaries, period_boundaries)
     horizontals = get_horizontal_lines(page)
     chunks = get_text_chunks(page)
-    default_room = get_default_room(chunks)
-    class_name = get_class_name(chunks)
+    default_room = get_default_room(chunks, table_top, period_boundaries[-1])
+    class_name = get_class_name(chunks, table_top)
 
     lessons = []
     for day, day_cells in cells.items():
-        top, bottom = DAY_BOUNDARIES[day - 1], DAY_BOUNDARIES[day]
+        top, bottom = day_boundaries[day - 1], day_boundaries[day]
 
         for first, last in day_cells:
-            left, right = PERIOD_BOUNDARIES[first - 1], PERIOD_BOUNDARIES[last]
+            left, right = period_boundaries[first - 1], period_boundaries[last]
 
             # thin lines strictly inside this row that cross the whole cell
             splits = sorted({round(y, 1) for y, xa, xb in horizontals
@@ -153,9 +153,9 @@ def parse_lessons(page):
     return lessons
 
 
-# ---------------------------------------------------------------------------
+
 # Step 5: flip the data around: class timetable -> per-teacher timetable.
-# ---------------------------------------------------------------------------
+
 def add_to_teacher_schedules(schedules, lessons):
     for lesson in lessons:
         if lesson["teacher"] is None:

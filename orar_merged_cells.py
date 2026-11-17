@@ -1,15 +1,10 @@
 import pymupdf
 
-# ---------------------------------------------------------------------------
-# Grid geometry (read off the vector lines of the aSc PDF, in PDF points).
-# Rows = Mon..Fri, columns = periods 1..13.
-# ---------------------------------------------------------------------------
-
-DAY_BOUNDARIES = [113.2, 206.8, 300.5, 394.1, 487.7, 581.4]
-PERIOD_BOUNDARIES = [88.9, 142.1, 195.2, 248.4, 301.4, 354.6, 407.8,
-                     460.9, 514.1, 567.1, 620.3, 673.4, 726.6, 779.8]
-
-TOL = 1.5  # tolerance -> how far a line may be from a boundary and still match it
+# Update:
+# The grid (day rows / period columns) is no longer hard-coded: detect_grid()
+# reads it from the lines drawn on each page, so a different page size or
+# column width does not break anything.
+TOL = 1.5  # points; how far a line may be from a boundary and still match it
 
 
 def find_interval(coordinate, boundaries):
@@ -19,7 +14,9 @@ def find_interval(coordinate, boundaries):
     return None
 
 
-# Step 1: read the vertical separator lines that are actually drawn
+
+# Step 1: read the vertical separator lines that are actually drawn.
+
 def get_vertical_lines(page):
     """Return every vertical line on the page as (x, y_top, y_bottom)."""
     verticals = []
@@ -32,7 +29,49 @@ def get_vertical_lines(page):
     return verticals
 
 
-# Step 2: for every day, work out which periods are fused into one cell
+def _cluster(values):
+    """Merge values that are within TOL of each other (float noise) into one."""
+    groups = []
+    for v in sorted(values):
+        if groups and v - groups[-1][-1] < TOL:
+            groups[-1].append(v)
+        else:
+            groups.append([v])
+    return [sum(g) / len(g) for g in groups]
+
+
+def detect_grid(page):
+    """
+    Returns (table_top, day_boundaries, period_boundaries) for this page,
+    or None if the page does not contain a timetable grid.
+
+    - The ends of the tall vertical lines give the y positions: the first one
+      is the top of the table, the rest are the day-row boundaries.
+    - Period boundaries are the x positions of vertical lines that cover a whole
+      day row (merged cells hide a line in some rows, so we take them from all
+      rows together). The left-most one is the table's outer frame, left of the
+      day-name column, so it is dropped.
+    """
+    verticals = [v for v in get_vertical_lines(page) if v[2] - v[1] > 40]
+    if not verticals:
+        return None
+    ys = _cluster([y for _, y0, y1 in verticals for y in (y0, y1)])
+    table_top, day_boundaries = ys[0], ys[1:]
+
+    xs = set()
+    for top, bottom in zip(day_boundaries, day_boundaries[1:]):
+        for x, y0, y1 in verticals:
+            if y0 <= top + TOL and y1 >= bottom - TOL:
+                xs.add(x)
+    period_boundaries = _cluster(xs)[1:]
+
+    if len(day_boundaries) < 3 or len(period_boundaries) < 3:
+        return None
+    return table_top, day_boundaries, period_boundaries
+
+
+
+# Step 2: for every day, work out which periods are fused into one cell.
 
 def build_cells(verticals, day_boundaries, period_boundaries):
     """
@@ -59,7 +98,8 @@ def build_cells(verticals, day_boundaries, period_boundaries):
     return cells
 
 
-# Step 3: classify a word -> (day, [every period its cell covers])
+
+# Step 3: classify a word -> (day, [every period its cell covers]).
 
 def classify_word(word, day_boundaries, period_boundaries, cells):
     x0, y0, x1, y1 = word[:4]
@@ -79,13 +119,14 @@ def classify_word(word, day_boundaries, period_boundaries, cells):
 
 def parse_timetable(path):
     page = pymupdf.open(path)[0]
-    cells = build_cells(get_vertical_lines(page), DAY_BOUNDARIES, PERIOD_BOUNDARIES)
+    _, day_boundaries, period_boundaries = detect_grid(page)
+    cells = build_cells(get_vertical_lines(page), day_boundaries, period_boundaries)
 
     slots = {}  # (day, period) -> list of words in that slot
     for word in page.get_text("words", sort=True):
-        if len(word[4]) <= 2 and word[4] != "CG":   # Edge case with CG
+        if len(word[4]) <= 2:
             continue
-        day, periods = classify_word(word, DAY_BOUNDARIES, PERIOD_BOUNDARIES, cells)
+        day, periods = classify_word(word, day_boundaries, period_boundaries, cells)
         for period in periods:                       # "virtual unmerge"
             slots.setdefault((day, period), []).append(word[4])
     return cells, slots
