@@ -11,6 +11,36 @@ GROUP_PREFIX = "Group"  # label printed at the top of each group, e.g. "Group 1"
 DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri"]
 TITLE_FONT = 30         # the class name ("10 A") is printed at about 33 pt
 
+SUMMER, WINTER = "summer", "winter"
+FIRST_PERIOD_START = 7 * 60 + 30     # 07:30, in minutes since midnight
+
+
+
+# Period schedule: when each period starts and ends, for summer or winter hours.
+#   summer: 50 min periods, 10 min break after every period
+#   winter: 45 min periods, 5 min break, except 10 min after periods 3, 6, 9
+#           (09:55-10:05, 12:30-12:40, 15:05-15:15)
+
+WINTER_LONG_BREAK_AFTER = {3, 6, 9}   # periods followed by a 10 minute break
+
+
+def period_times(season, n_periods=13):
+    """Returns {period_number: "HH:MM - HH:MM"}, periods numbered from 1."""
+    def fmt(minutes):
+        return f"{minutes // 60:02d}:{minutes % 60:02d}"
+
+    length = 45 if season == WINTER else 50
+    times = {}
+    start = FIRST_PERIOD_START
+    for period in range(1, n_periods + 1):
+        times[period] = f"{fmt(start)} - {fmt(start + length)}"
+        if season == WINTER:
+            pause = 10 if period in WINTER_LONG_BREAK_AFTER else 5
+        else:
+            pause = 10
+        start += length + pause
+    return times
+
 
 
 # Step 1: horizontal lines (the thin lines that split a cell between groups)
@@ -25,6 +55,7 @@ def get_horizontal_lines(page):
                 if abs(p1.y - p2.y) < 0.5:
                     lines.append((p1.y, min(p1.x, p2.x), max(p1.x, p2.x)))
     return lines
+
 
 
 # Step 2: text "chunks" = runs of characters that were printed one after

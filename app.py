@@ -1,7 +1,7 @@
 import pymupdf
 import streamlit as st
 from collections import defaultdict
-from orar_teachers import parse_lessons, add_to_teacher_schedules, DAY_NAMES
+from orar_teachers import parse_lessons, add_to_teacher_schedules, DAY_NAMES, period_times
 
 st.markdown("<h1 style='text-align: center;'>ViTime</h1>", unsafe_allow_html=True) # center title
 st.markdown(
@@ -19,8 +19,11 @@ st.markdown("""
 1. Upload the PDF with the timetables (one class per page).
 2. Choose a teacher from the list.
 3. The table shows every lesson that teacher has, by day and period.
+4. Use the toggle to switch between summer and winter hours.
 """)
 
+winter = st.toggle("Winter hours")  # off = summer hours
+times = period_times("winter" if winter else "summer")
 
 uploaded = st.file_uploader("Upload the timetable PDF", type="pdf")
 
@@ -36,6 +39,7 @@ if uploaded:
     {
         "Day": DAY_NAMES[e["day"] - 1],
         "Period": e["period"],
+        "Time": times.get(e["period"], ""),
         "Class": e["class"],
         "Subject": e["subject"],
         "Room": e["room"],
