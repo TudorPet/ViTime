@@ -8,7 +8,7 @@ st.markdown(
     """
     <div style="position: fixed; bottom: 10px; right: 15px;
                 font-size: 1rem; color: gray; z-index: 100;">
-        made with <3 by T
+        made with <3 by T @ VianuEngineering
     </div>
     """,
     unsafe_allow_html=True,

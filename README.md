@@ -26,7 +26,9 @@ is active, so they go into the right Python.
 
 ## Running the app
 
-Double-click `start.bat`, or run:
+For browser use: https://vitime.streamlit.app/
+
+For local use, double-click `start.bat`, or run:
 
 ```powershell
 .venv\Scripts\activate
@@ -88,6 +90,5 @@ public repository (`*.pdf` is best kept in `.gitignore`).
 
 ## Work in progress
 
-Currently, I am working on merging this with another project and publishing it as a full, browser accessible app.
 There is still some work left to do on the comments of this code, in order to make it as easy to understand as possible.
 A full pdf containing explanations is in development.
