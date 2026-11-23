@@ -3,7 +3,13 @@ import streamlit as st
 from collections import defaultdict
 from orar_teachers import parse_lessons, add_to_teacher_schedules, DAY_NAMES, period_times
 
+    
 st.markdown("<h1 style='text-align: center;'>ViTime</h1>", unsafe_allow_html=True) # center title
+
+left, middle, right = st.columns([1, 2, 1]) # center logo - modify middle column number in order to enlarge
+with middle:
+    st.image("logo.png", width="stretch")
+
 st.markdown(
     """
     <div style="position: fixed; bottom: 10px; right: 15px;
@@ -22,7 +28,7 @@ st.markdown("""
 4. Use the toggle to switch between summer and winter hours.
 """)
 
-winter = st.toggle("Winter hours")  # off = summer hours
+winter = st.toggle("❄️ Winter hours")  # off = summer hours
 times = period_times("winter" if winter else "summer")
 
 uploaded = st.file_uploader("Upload the timetable PDF", type="pdf")
@@ -49,6 +55,3 @@ if uploaded:
     ]
     st.table(rows)
 
-left, middle, right = st.columns([1, 2, 1]) # center logo - modify middle column number in order to enlarge
-with middle:
-    st.image("logo.png", width="stretch")
