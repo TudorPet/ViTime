@@ -45,6 +45,7 @@ def period_times(season, n_periods=13):
 
 
 # Step 1: horizontal lines (the thin lines that split a cell between groups)
+# horizontal lines are only needed to detect group-split lessons
 
 def get_horizontal_lines(page):
     """Return every horizontal line on the page as (y, x_left, x_right)."""
@@ -161,11 +162,16 @@ def parse_lessons(page):
         for first, last in day_cells:
             left, right = period_boundaries[first - 1], period_boundaries[last]
 
-            # thin lines strictly inside this row that cross the whole cell
+            # looks through all (thin) horizontal lines on the page and keeps only the
+            # ones sitting strictly inside this specific day row that cross the whole cell
+
             splits = sorted({round(y, 1) for y, xa, xb in horizontals
                              if top + TOL < y < bottom - TOL
                              and xa <= left + TOL and xb >= right - TOL})
-            bands = [top] + splits + [bottom]    # one band per group
+            
+            # If there is 1 horizontal divider inside the cell, bands becomes [top, split_y, bottom]
+            # else bands is just [top, bottom]
+            bands = [top] + splits + [bottom]    # one band per group - pretty much a vector that stores boundaries
 
             inside = [c for c in chunks
                       if left <= (c["x0"] + c["x1"]) / 2 < right

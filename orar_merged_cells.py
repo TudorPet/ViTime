@@ -1,9 +1,15 @@
 import pymupdf
 
-# Update:
+
 # The grid (day rows / period columns) is no longer hard-coded: detect_grid()
 # reads it from the lines drawn on each page, so a different page size or
 # column width does not break anything.
+
+# Worth knowing that aSc doesnt draw big lines. For example, the vertical line that splits the days
+# and lessons isnt a single big one, but 5 smaller ones
+# This works for every cell. Thus, horizontal lines are only needed to detect group-split lessons,
+# making things a bit easier
+
 TOL = 1.5  # points; how far a line may be from a boundary and still match it
 
 
