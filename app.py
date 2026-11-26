@@ -1,7 +1,7 @@
 import pymupdf
 import streamlit as st
 from collections import defaultdict
-from orar_teachers import parse_lessons, add_to_teacher_schedules, DAY_NAMES, period_times, find_free_rooms
+from orar_teachers import (parse_lessons, add_to_teacher_schedules, DAY_NAMES, period_times, find_free_rooms)
 
     
 st.markdown("<h1 style='text-align: center;'>ViTime</h1>", unsafe_allow_html=True) # center title
