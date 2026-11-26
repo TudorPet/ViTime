@@ -1,3 +1,4 @@
+import re
 import sys
 from collections import defaultdict
 
@@ -196,6 +197,37 @@ def add_to_teacher_schedules(schedules, lessons):
                 "day": lesson["day"], "period": period, "class": lesson["class"],
                 "subject": lesson["subject"], "room": lesson["room"],
                 "group": lesson["group"]})
+
+
+# Step 6: which rooms are free at a given day and period?
+
+def room_sort_key(room):
+    """Natural order, so "S 2" comes before "S 10" (plain sorting would not)."""
+    return [int(part) if part.isdigit() else part.lower()
+            for part in re.split(r"(\d+)", room)]
+
+
+def find_free_rooms(lessons, day, period):
+    """
+    lessons: the list returned by parse_lessons(), collected over all pages.
+    Returns (free_rooms, busy):
+      free_rooms - sorted list of rooms with no lesson at that day and period
+      busy       - {room: ["9A LbRo (JoDoe)", ...]} for the rooms in use
+    A room is only known if it appears somewhere in the timetable.
+    """
+    all_rooms = {l["room"] for l in lessons if l["room"]}
+
+    busy = defaultdict(list)
+    for l in lessons:
+        if l["room"] and l["day"] == day and period in l["periods"]:
+            who = f'{l["class"]} {l["subject"]} ({l["teacher"]})'
+            if l["group"]:
+                who += f' - {l["group"]}'
+            busy[l["room"]].append(who)
+
+    free = sorted(all_rooms - set(busy), key=room_sort_key)
+    busy = {room: busy[room] for room in sorted(busy, key=room_sort_key)}
+    return free, busy
 
 
 if __name__ == "__main__":
